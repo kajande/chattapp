@@ -1,4 +1,5 @@
 import os
+from socket import gethostname
 from datetime import datetime
 from flask import Flask, redirect, render_template, request, session, url_for
 
@@ -39,6 +40,9 @@ def user(username):
     
     return render_template("chat.html", username = username, chat_messages = messages)
     
-app.run(host=os.getenv('IP', "127.0.0.1"), port=int(os.getenv('PORT', "5000")), debug=False) # debug=False for production. 
-""" Fallback values for IP = 0.0.0.0 & PORT = 5000 """
+if __name__ == '__main__':
+    # db.create_all()
+    if 'liveconsole' not in gethostname():
+        app.run(host=os.getenv('IP', "127.0.0.1"), port=int(os.getenv('PORT', "5000")), debug=False) # debug=False for production. 
+    """ Fallback values for IP = 0.0.0.0 & PORT = 5000 """
 
