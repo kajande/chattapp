@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Smartacus - AI Assistant</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+
+  <style>
+    :root {
+      --leftbar-width: 300px;
+      --chat-bg-user: #e3f2fd;
+      --chat-bg-ai: #f5f5f5;
+      --chat-timestamp: #6c757d;
+      --primary-color: #0d6efd;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8f9fa;
+      color: #212529;
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+    
+    .leftbar {
+      width: var(--leftbar-width);
+      height: 100%;
+      background-color: white;
+      border-right: 1px solid #dee2e6;
+      display: flex;
+      flex-direction: column;
+      transition: width 0.3s ease;
+    }
+    
+    .leftbar-content {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    
+    .leftbar-header {
+      padding: 1rem;
+      border-bottom: 1px solid #dee2e6;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 0.5rem;
+    }
+    
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .message {
+      max-width: 80%;
+      padding: 0.75rem 1rem;
+      border-radius: 1rem;
+      position: relative;
+    }
+    
+    .message.user {
+      align-self: flex-end;
+      background-color: var(--chat-bg-user);
+      border-bottom-right-radius: 0.25rem;
+    }
+    
+    .message.ai {
+      align-self: flex-start;
+      background-color: var(--chat-bg-ai);
+      border-bottom-left-radius: 0.25rem;
+    }
+    
+    .message.error {
+      align-self: center;
+      background-color: #f8d7da;
+      color: #721c24;
+      text-align: center;
+    }
+    
+    .message .timestamp {
+      font-size: 0.7rem;
+      color: var(--chat-timestamp);
+      margin-bottom: 0.25rem;
+    }
+    
+    .message .content {
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+    
+    .chat-input {
+      display: flex;
+      padding: 0.75rem;
+      border-top: 1px solid #dee2e6;
+      background-color: white;
+    }
+    
+    .chat-input input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: 1px solid #ced4da;
+      border-radius: 2rem;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    
+    .chat-input input:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .header-actions button {
+      background: none;
+      border: none;
+      color: #6c757d;
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .header-actions button:hover {
+      background-color: #e9ecef;
+    }
+    
+    .copy-button {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: rgba(255, 255, 255, 0.7);
+      border: none;
+      border-radius: 4px;
+      padding: 0.25rem;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    
+    .message:hover .copy-button {
+      opacity: 1;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .leftbar {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Leftbar with Chat -->
+  <div class="leftbar">
+    <div class="leftbar-content">
+      <div class="leftbar-header">
+        <h3>AI Assistant</h3>
+        <div class="header-actions">
+          <button class="btn-chat-settings" title="Chat Settings">
+            <i class="bi bi-gear"></i>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Chat Container -->
+      <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+          <div class="message ai">
+            <div class="timestamp">10:00 AM</div>
+            <div class="content">Hello! I'm your AI assistant. How can I help you today?</div>
+          </div>
+        </div>
+        
+        <form class="chat-input" id="chatForm">
+          <input type="text" 
+                placeholder="Type your message..." 
+                id="chatInput" 
+                required
+                aria-label="Chat input">
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Elements
+      const chatForm = document.getElementById('chatForm');
+      const chatInput = document.getElementById('chatInput');
+      const chatMessages = document.getElementById('chatMessages');
+      
+      // Initialize the chat
+      initializeChat();
+      
+      // Chat setup
+      function initializeChat() {
+        // Load any saved messages
+        const savedMessages = localStorage.getItem('chatMessages');
+        if (savedMessages) {
+          chatMessages.innerHTML = savedMessages;
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Add event listeners
+        chatForm.addEventListener('submit', handleSubmit);
+        chatInput.addEventListener('keydown', handleKeyDown);
+        chatInput.addEventListener('input', handleInput);
+        
+        // Add copy buttons to existing AI messages
+        document.querySelectorAll('.message.ai').forEach(messageDiv => {
+          addCopyButtonToMessage(messageDiv);
+        });
+      }
+      
+      // Add copy button to message
+      function addCopyButtonToMessage(messageDiv) {
+        const copyButton = document.createElement('button');
+        copyButton.className = 'copy-button';
+        copyButton.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
+            <path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8C6.9 5 6 5.9 6 7v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+          </svg>
+        `;
+        
+        copyButton.addEventListener('click', () => {
+          const content = messageDiv.querySelector('.content').textContent;
+          navigator.clipboard.writeText(content)
+            .then(() => {
+              copyButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                </svg>
+              `;
+              setTimeout(() => {
+                copyButton.innerHTML = `
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
+                    <path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8C6.9 5 6 5.9 6 7v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                  </svg>
+                `;
+              }, 2000);
+            })
+            .catch(err => {
+              console.error('Failed to copy:', err);
+            });
+        });
+        
+        messageDiv.appendChild(copyButton);
+      }
+      
+      // Handle message submission
+      async function handleSubmit(e) {
+        e.preventDefault();
+        
+        const message = chatInput.value.trim();
+        if (!message) return;
+        
+        // Add user message
+        addMessage('user', message);
+        chatInput.value = '';
+        chatInput.disabled = true;
+        
+        try {
+          // Show loading indicator
+          const loadingMessage = addMessage('ai', 'Thinking...');
+          
+          // Simulate API delay
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Remove loading message
+          loadingMessage.remove();
+          
+          // Generate AI response
+          const aiResponse = generateAIResponse(message);
+          
+          // Add AI response
+          addMessage('ai', aiResponse);
+          
+        } catch (error) {
+          addMessage('error', 'Failed to get response. Please try again.');
+          console.error('Chat error:', error);
+        } finally {
+          chatInput.disabled = false;
+          chatInput.focus();
+        }
+      }
+      
+      // Generate AI response based on user input
+      function generateAIResponse(message) {
+        const responses = [
+          "I understand you're asking about: " + message + ". Here's what I can tell you...",
+          "That's an interesting question! Based on my knowledge, I'd recommend...",
+          "I've analyzed your query and found several relevant points...",
+          "Thanks for your question! Here's a detailed response...",
+          "Based on my analysis, I suggest considering the following approach..."
+        ];
+        
+        // Simple response based on keywords
+        if (message.toLowerCase().includes('hello') || message.toLowerCase().includes('hi')) {
+          return "Hello there! How can I assist you today?";
+        }
+        if (message.toLowerCase().includes('help')) {
+          return "I'd be happy to help! Could you provide more details about what you need assistance with?";
+        }
+        
+        // Return a random response
+        return responses[Math.floor(Math.random() * responses.length)];
+      }
+      
+      // Handle Enter key
+      function handleKeyDown(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          chatForm.dispatchEvent(new Event('submit'));
+        }
+      }
+      
+      // Auto-resize input
+      function handleInput() {
+        this.style.height = 'auto';
+        this.style.height = `${Math.min(this.scrollHeight, 150)}px`;
+      }
+      
+      // Add new message
+      function addMessage(sender, text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}`;
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        messageDiv.innerHTML = `
+          <div class="timestamp">${timestamp}</div>
+          <div class="content">${text}</div>
+        `;
+        
+        // Add copy button for AI responses
+        if (sender === 'ai') {
+          addCopyButtonToMessage(messageDiv);
+        }
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Save messages to localStorage
+        localStorage.setItem('chatMessages', chatMessages.innerHTML);
+        
+        return messageDiv;
+      }
+    });
+  </script>
+</body>
+</html>
